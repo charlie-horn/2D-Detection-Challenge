@@ -19,6 +19,7 @@ mkdir output
 
 #gcloud auth login chorn6300@gmail.com
 
+sudo apt-get install python3-pip
 pip3 install --upgrade pip
 #pip3 install waymo-open-dataset-tf-2-1-0==1.2.0
 pip3 install waymo-open-dataset-tf-2-1-0
