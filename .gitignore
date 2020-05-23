@@ -1,2 +1,4 @@
-frcnn
+__pycache__
 waymo-od
+weights/*
+input_files/*
