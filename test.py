@@ -34,11 +34,11 @@ def test():
     #print(device_lib.list_local_devices())
 
     # Helpers
-    from generator import *
-    from helpers import *
+    import generator
+    import helpers
     C = config.Config()
     C.model_path = 'weights/model_frcnn.hdf5'
-    #C.classifier_min_overlap = 0.0
+
     output_file = "output/predictions.bin"
 
     class_mapping = {"zero_class": 0,
@@ -49,11 +49,10 @@ def test():
                      "bg": 5}
 
     class_mapping = {v: k for k, v in class_mapping.items()}
-    class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
 
     remote_folder = "gs://waymo_open_dataset_v_1_2_0_individual_files/validation/"
 
-    dataset_generator = get_dataset_generator(C, remote_folder, nn.get_img_output_length, class_mapping, mode="validate")
+    dataset_generator = generator.get_dataset_generator(C, remote_folder, nn.get_img_output_length, class_mapping, mode="validate")
 
     img_input = Input(shape=(None,None,3))
     roi_input = Input(shape=(None,4))
@@ -81,8 +80,6 @@ def test():
     idx = 0
 
     bbox_threshold = 0.1
-
-    visualise = True
 
     while True:
       X, Y, img_data, context, image = next(dataset_generator)
@@ -140,7 +137,7 @@ def test():
           bboxes[cls_name].append([C.rpn_stride*x, C.rpn_stride*y, C.rpn_stride*(x+w), C.rpn_stride*(y+h)])
           probs[cls_name].append(np.max(P_cls[0, ii, :]))
 
-      #create_prediction(output_file, context, image, bboxes, probs)
+      helpers.create_prediction(output_file, context, image, bboxes, probs)
 
       all_dets = []
       img=X[0]

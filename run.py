@@ -36,7 +36,7 @@ if options.mode == "train":
     train.train(input_weight_path, output_weight_path, learning_rate, epoch_length, num_epochs)
 
 elif options.mode == "test":
-    test()
+    test.test()
 
 else:
     parser.error("Invalid mode")
