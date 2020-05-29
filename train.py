@@ -1,4 +1,4 @@
-def train(input_weight_path, output_weight_path, learning_rate, epoch_length, num_epochs):
+def train(input_class_weight_path, input_rpn_weight_path, output_class_weight_path, output_rpn_weight_path, learning_rate, epoch_length, num_epochs):
     # General modules
     import os
     import tensorflow as tf
@@ -37,8 +37,10 @@ def train(input_weight_path, output_weight_path, learning_rate, epoch_length, nu
     import helpers
 
     C = config.Config()
-    C.base_net_weights = input_weight_path
-    C.model_path = output_weight_path
+    C.base_rpn_weights_path = input_rpn_weight_path
+    C.rpn_weights_path = output_rpn_weight_path
+    C.base_class_weights_path = input_class_weight_path
+    C.class_weights_path = output_class_weight_path
 
     class_mapping = {"zero_class": 0,
                      "TYPE_VEHICLE": 1,
@@ -69,9 +71,10 @@ def train(input_weight_path, output_weight_path, learning_rate, epoch_length, nu
     model_all = Model([img_input, roi_input], rpn[:2] + classifier)
 
     try:
-        print('loading weights from {}'.format(C.base_net_weights))
-        model_rpn.load_weights(C.base_net_weights, by_name=True)
-        model_classifier.load_weights(C.base_net_weights, by_name=True)
+        print('loading RPN weights from {}'.format(C.base_rpn_weights_path))
+        print('loading RPN weights from {}'.format(C.base_class_weights_path))
+        model_rpn.load_weights(C.base_rpn_weights_path, by_name=True)
+        model_classifier.load_weights(C.base_class_weights_path, by_name=True)
     except:
         print('Could not load pretrained model weights. Weights can be found in the keras application folder \
                     https://github.com/fchollet/keras/tree/master/keras/applications')
@@ -98,13 +101,6 @@ def train(input_weight_path, output_weight_path, learning_rate, epoch_length, nu
         print('Epoch {}/{}'.format(epoch_num + 1, num_epochs))
 
         while True:
-            if len(rpn_accuracy_rpn_monitor) == epoch_length:
-                mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-                rpn_accuracy_rpn_monitor = []
-                print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
-                if mean_overlapping_bboxes == 0:
-                    print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
-
             X, Y, img_data, _, _ = next(dataset_generator)
             
             loss_rpn = model_rpn.train_on_batch(X, Y)
@@ -190,10 +186,23 @@ def train(input_weight_path, output_weight_path, learning_rate, epoch_length, nu
                 print('Loss Detector classifier: {}'.format(loss_class_cls))
                 print('Loss Detector regression: {}'.format(loss_class_regr))
                 print('Elapsed time: {}'.format(time.time() - start_time))
-                print("None count: ", none_count)
+                print("None count:", none_count)
                 none_count = 0
-
-                curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
+                rpn_loss = loss_rpn_cls + loss_rpn_regr
+                print("Current RPN Loss:",rpn_loss)
+                print("Best RPN Loss:", best_rpn_loss)
+                if rpn_loss < best_rpn_loss:
+                    print("# Saving RPN weights")
+                    best_rpn_loss = rpn_loss
+                    model_rpn.save_weights(C.rpn_weights_path)
+                
+                class_loss = loss_class_cls +loss_class_regr
+                print("Current Classifier Loss:",class_loss)
+                print("Best Clasifier Loss:",best_class_loss)
+                if class_loss < best_class_loss:
+                    print("# Saving Classifier weights")
+                    best_class_loss = class_loss
+                    model_classifier.save_weights(C.class_weights_path)
                 iter_num = 0
                 start_time = time.time()
 

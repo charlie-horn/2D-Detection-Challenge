@@ -18,8 +18,10 @@ parser.add_option("-l", "--learning_rate", type="float", dest="learning_rate", d
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config.pickle")
-parser.add_option("-o", "--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="./weights/model_frcnn.hdf5")
-parser.add_option("-i", "--input_weight_path", dest="input_weight_path", help="Input path for weights. If not specified, will try to load default weights provided by keras.", default="./weights/model_frcnn.hdf5")
+parser.add_option("-oc", "--output_class_weight_path", dest="output_class_weight_path", help="Output path for weights.", default="./weights/class.hdf5")
+parser.add_option("-or", "--output_rpn_weight_path", dest="output_rpn_weight_path", help="Output path for weights.", default="./weights/rpn.hdf5")
+parser.add_option("-ic", "--input_class_weight_path", dest="input_class_weight_path", default="./weights/class.hdf5")
+parser.add_option("-ir", "--input_rpn_weight_path", dest="input_rpn_weight_path", default="./weights/rpn.hdf5")
 
 (options, args) = parser.parse_args()
 
@@ -28,12 +30,14 @@ if not options.mode:
 
 if options.mode == "train":
     print("Training")
-    input_weight_path = options.input_weight_path
-    output_weight_path = options.output_weight_path
+    input_class_weight_path = options.input_class_weight_path
+    input_rpn_weight_path = options.input_rpn_weight_path
+    output_class_weight_path = options.output_class_weight_path
+    output_rpn_weight_path = options.output_rpn_weight_path
     learning_rate = options.learning_rate
     epoch_length = options.epoch_length
     num_epochs = options.num_epochs
-    train.train(input_weight_path, output_weight_path, learning_rate, epoch_length, num_epochs)
+    train.train(input_class_weight_path, input_rpn_weight_path, output_class_weight_path, output_class_weight_path, learning_rate, epoch_length, num_epochs)
 
 elif options.mode == "test":
     test.test()
