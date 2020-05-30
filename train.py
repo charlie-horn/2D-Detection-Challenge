@@ -93,6 +93,9 @@ def train(input_class_weight_path, input_rpn_weight_path, output_class_weight_pa
     start_time = time.time()
 
     best_loss = np.Inf
+    best_rpn_loss = np.Inf
+    best_class_loss = np.Inf
+    print('Starting training')
     none_count = 0
     print('Starting training')
 
@@ -101,6 +104,7 @@ def train(input_class_weight_path, input_rpn_weight_path, output_class_weight_pa
         print('Epoch {}/{}'.format(epoch_num + 1, num_epochs))
 
         while True:
+            print("test")
             X, Y, img_data, _, _ = next(dataset_generator)
             
             loss_rpn = model_rpn.train_on_batch(X, Y)
@@ -113,6 +117,9 @@ def train(input_class_weight_path, input_rpn_weight_path, output_class_weight_pa
 
             if X2 is None:
                 none_count += 1
+                if none_count % 100 == 0:
+                    print("None count:",none_count)
+                    print("Iteration:", iter_num)
                 rpn_accuracy_rpn_monitor.append(0)
                 rpn_accuracy_for_epoch.append(0)
                 continue
@@ -206,10 +213,6 @@ def train(input_class_weight_path, input_rpn_weight_path, output_class_weight_pa
                 iter_num = 0
                 start_time = time.time()
 
-                if curr_loss < best_loss:
-                    print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
-                    best_loss = curr_loss
-                    model_all.save_weights(C.model_path)
                 break
 
     print('Training complete, exiting.')

@@ -38,6 +38,8 @@ def test():
     import helpers
     C = config.Config()
     C.model_path = 'weights/model_frcnn.hdf5'
+    C.rpn_weights_path = "weights/rpn.hdf5"
+    C.class_weights_path = "weights/class.hdf5"
 
     output_file = "output/predictions.bin"
 
@@ -71,8 +73,8 @@ def test():
     model_classifier = Model([feature_map_input, roi_input], classifier)
 
     print('Loading weights from {}'.format(C.model_path))
-    model_rpn.load_weights(C.model_path, by_name=True)
-    model_classifier.load_weights(C.model_path, by_name=True)
+    model_rpn.load_weights(C.rpn_weights_path, by_name=True)
+    model_classifier.load_weights(C.class_weights_path, by_name=True)
 
     model_rpn.compile(optimizer='sgd', loss='mse')
     model_classifier.compile(optimizer='sgd', loss='mse')
@@ -170,10 +172,11 @@ def test():
 
       idx += 1
       if drawn:
+        print("Drawn")
         img = cv2.resize(img, (int(img.shape[1]//img_data['ratio']), int(img.shape[0]//img_data['ratio'])), interpolation=cv2.INTER_CUBIC)
         img = img[:,:, (2, 1, 0)]
         img[:, :, 0] += C.img_channel_mean[0]
         img[:, :, 1] += C.img_channel_mean[1]
         img[:, :, 2] += C.img_channel_mean[2]
 
-        cv2.imwrite('./results_imgs/{}.png'.format(idx), img)
+        #cv2.imwrite('./results_imgs/{}.png'.format(idx), img)
