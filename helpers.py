@@ -16,14 +16,17 @@ def get_remote_file(remote_file, target_folder):
         subprocess.call(cp_command, shell=True)
     return file_to_copy
 
-def create_prediction(output_file, context, image, bboxes, probs):
+def create_prediction(output_file, context, image, bboxes, probs,ratio):
+    from waymo_open_dataset import dataset_pb2
+    from waymo_open_dataset import label_pb2
+    from waymo_open_dataset.protos import metrics_pb2
     objects = metrics_pb2.Objects()
     file = open(output_file, "rb")
     objects.ParseFromString(file.read())
-    f.close()
+    file.close()
 
     for object_type, bboxes in bboxes.items():
-        print(object_type)
+        
         for i, bbox in enumerate(bboxes):
             o = metrics_pb2.Object()
             # The following 3 fields are used to uniquely identify a frame a prediction
@@ -51,8 +54,8 @@ def create_prediction(output_file, context, image, bboxes, probs):
             o.object.box.CopyFrom(box)
             # This must be within [0.0, 1.0]. It is better to filter those boxes with
             # small scores to speed up metrics computation.
-            print(probs[i])
-            o.score = probs[i]
+            o.score = probs[object_type][i]
+            
 
             # Use correct type.
             if object_type == "TYPE_VEHICLE":

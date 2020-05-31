@@ -44,3 +44,12 @@ sudo dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb
 
 export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64:$LD_LIBRARY_PATH
 export PATH=/usr/local/cuda-10.1/bin:$PATH
+
+sudo apt-get install --assume-yes pkg-config zip g++ zlib1g-dev unzip
+BAZEL_VERSION=0.28.0
+cd waymo-od && wget https://github.com/bazelbuild/bazel/releases/download/0.28.0/bazel-0.28.0-installer-linux-x86_64.sh
+bash bazel-0.28.0-installer-linux-x86_64.sh
+sudo apt install build-essential
+sudo bash configure.sh
+cd .. && mkdir output
+mkdir output/my_model

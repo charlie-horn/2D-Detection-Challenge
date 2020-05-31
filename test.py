@@ -45,6 +45,8 @@ def test():
       os.remove(output_file)
     except:
       pass
+    create_output_file = "touch " + output_file
+    subprocess.call(create_output_file, shell=True)
 
     class_mapping = {"zero_class": 0,
                      "TYPE_VEHICLE": 1,
@@ -55,7 +57,7 @@ def test():
 
     class_mapping = {v: k for k, v in class_mapping.items()}
 
-    remote_folder = "gs://waymo_open_dataset_v_1_2_0_individual_files/validation/"
+    remote_folder = "gs://waymo_open_dataset_v_1_2_0_individual_files/testing/"
 
     dataset_generator = generator.get_dataset_generator(C, remote_folder, nn.get_img_output_length, class_mapping, mode="validate")
 
@@ -138,29 +140,35 @@ def test():
             x, y, w, h = roi_helpers.apply_regr(x, y, w, h, tx, ty, tw, th)
           except:
             pass
-          bboxes[cls_name].append([C.rpn_stride*x, C.rpn_stride*y, C.rpn_stride*(x+w), C.rpn_stride*(y+h)])
-          probs[cls_name].append(np.max(P_cls[0, ii, :]))
+          if w > 0 and h > 0:
+            bboxes[cls_name].append([C.rpn_stride*x, C.rpn_stride*y, C.rpn_stride*(x+w), C.rpn_stride*(y+h)])
+            probs[cls_name].append(np.max(P_cls[0, ii, :]))
 
-      helpers.create_prediction(output_file, context, image, bboxes, probs, img_data['ratio'])
+
 
       all_dets = []
       img=X[0]
       img = cv2.resize(img, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
       #print("Output Shape:",img.shape)
       drawn = False
+      new_bboxes = {}
+      new_probs_dict = {}
       for key in bboxes:
         bbox = np.array(bboxes[key])
 
         new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
+        new_bboxes[key] = new_boxes
+        new_probs_dict[key] = new_probs
+
         for jk in range(new_boxes.shape[0]):
           drawn = True
           (x1, y1, x2, y2) = new_boxes[jk,:]
 
           #cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255),2)
 
+      helpers.create_prediction(output_file, context, image, new_bboxes, new_probs_dict, img_data['ratio'])
       idx += 1
-      if drawn:
-        print("Drawn")
+      if False:
         img = cv2.resize(img, (int(img.shape[1]//img_data['ratio']), int(img.shape[0]//img_data['ratio'])), interpolation=cv2.INTER_CUBIC)
         img = img[:,:, (2, 1, 0)]
         img[:, :, 0] += C.img_channel_mean[0]
