@@ -4,7 +4,9 @@ def get_remote_file_names(data_directory):
     file_names_string_output = subprocess.check_output(list_command, shell=True).decode("utf-8")
     file_names_list = file_names_string_output.split("\n")[:-1]
     print("There are",len(file_names_list),"files to read")
-    return file_names_list
+    start_index = file_names_list.index("gs://waymo_open_dataset_v_1_2_0_individual_files/testing/segment-11987368976578218644_1340_000_1360_000_with_camera_labels.tfrecord")
+    print(start_index)
+    return file_names_list[start_index:]
 
 def get_remote_file(remote_file, target_folder):
     import subprocess
@@ -25,9 +27,9 @@ def create_prediction(output_file, context, image, bboxes, probs,ratio):
     objects.ParseFromString(file.read())
     file.close()
 
-    for object_type, bboxes in bboxes.items():
+    for object_type, boxes in bboxes.items():
         
-        for i, bbox in enumerate(bboxes):
+        for i, bbox in enumerate(boxes):
             o = metrics_pb2.Object()
             # The following 3 fields are used to uniquely identify a frame a prediction
             # is predicted at. Make sure you set them to values exactly the same as what

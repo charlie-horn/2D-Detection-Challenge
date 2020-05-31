@@ -42,7 +42,8 @@ def test():
 
     output_file = "output/predictions.bin"
     try:
-      os.remove(output_file)
+#      os.remove(output_file)
+      pass
     except:
       pass
     create_output_file = "touch " + output_file
@@ -85,7 +86,7 @@ def test():
 
     idx = 0
 
-    bbox_threshold = 0.6
+    bbox_threshold = 0.4
 
     while True:
       X, Y, img_data, context, image = next(dataset_generator)
@@ -145,7 +146,7 @@ def test():
             probs[cls_name].append(np.max(P_cls[0, ii, :]))
 
 
-
+      #helpers.create_prediction("output/predictions_nonMax.bin", context, image, bboxes, probs, img_data['ratio'])
       all_dets = []
       img=X[0]
       img = cv2.resize(img, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
@@ -156,7 +157,7 @@ def test():
       for key in bboxes:
         bbox = np.array(bboxes[key])
 
-        new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
+        new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.9)
         new_bboxes[key] = new_boxes
         new_probs_dict[key] = new_probs
 
