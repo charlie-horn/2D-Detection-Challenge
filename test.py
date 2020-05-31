@@ -41,6 +41,10 @@ def test():
     C.class_weights_path = "weights/resnet.hdf5"
 
     output_file = "output/predictions.bin"
+    try:
+      os.remove(output_file)
+    except:
+      pass
 
     class_mapping = {"zero_class": 0,
                      "TYPE_VEHICLE": 1,

@@ -2,3 +2,5 @@ __pycache__
 waymo-od
 input_files/*
 frcnn
+backup
+weights
