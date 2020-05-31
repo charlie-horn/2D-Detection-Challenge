@@ -3,6 +3,7 @@ def get_remote_file_names(data_directory):
     list_command = "gsutil ls " + data_directory
     file_names_string_output = subprocess.check_output(list_command, shell=True).decode("utf-8")
     file_names_list = file_names_string_output.split("\n")[:-1]
+    print("There are",len(file_names_list),"files to read")
     return file_names_list
 
 def get_remote_file(remote_file, target_folder):
@@ -16,50 +17,54 @@ def get_remote_file(remote_file, target_folder):
     return file_to_copy
 
 def create_prediction(output_file, context, image, bboxes, probs):
-    print("Context Name:", context.name)
-    print("Timestamp:", image.pose_timestamp)
-    print("Camera name:", image.name)
-    print("Bbox:", bboxes)
-    print("Probs:", probs)
-    return
     objects = metrics_pb2.Objects()
     file = open(output_file, "rb")
     objects.ParseFromString(file.read())
     f.close()
 
-    for i, bbox in enumerate(bboxes):
-        o = metrics_pb2.Object()
-        # The following 3 fields are used to uniquely identify a frame a prediction
-        # is predicted at. Make sure you set them to values exactly the same as what
-        # we provided in the raw data. Otherwise your prediction is considered as a
-        # false negative.
-        o.context_name = context.name
+    for object_type, bboxes in bboxes.items():
+        print(object_type)
+        for i, bbox in enumerate(bboxes):
+            o = metrics_pb2.Object()
+            # The following 3 fields are used to uniquely identify a frame a prediction
+            # is predicted at. Make sure you set them to values exactly the same as what
+            # we provided in the raw data. Otherwise your prediction is considered as a
+            # false negative.
+            o.context_name = context.name
 
-        # The frame timestamp for the prediction. See Frame::timestamp_micros in
-        # dataset.proto.
-        o.frame_timestamp_micros = image.pose_timestamp
-        # This is only needed for 2D detection or tracking tasks.
-        # Set it to the camera name the prediction is for.
-        o.camera_name = image.name
+            # The frame timestamp for the prediction. See Frame::timestamp_micros in
+            # dataset.proto.
+            o.frame_timestamp_micros = int(image.pose_timestamp)
+            # This is only needed for 2D detection or tracking tasks.
+            # Set it to the camera name the prediction is for.
+            o.camera_name = image.name
 
-        # Populating box and score.
-        box = label_pb2.Label.Box()
-        box.center_x = 0
-        box.center_y = 0
-        box.center_z = 0
-        box.length = 0
-        box.width = 0
-        box.height = 0
-        box.heading = 0
-        o.object.box.CopyFrom(box)
-        # This must be within [0.0, 1.0]. It is better to filter those boxes with
-        # small scores to speed up metrics computation.
-        o.score = 0.5
+            # Populating box and score.
+            box = label_pb2.Label.Box()
+            box.center_x = int((bbox[0] + bbox[2]/2)/ratio)
+            box.center_y = int((bbox[1] + bbox[3]/2)/ratio)
+            box.center_z = 0
+            box.length = int(bbox[3]/ratio)
+            box.width = int(bbox[2]/ratio)
+            box.height = 0
+            box.heading = 0
+            o.object.box.CopyFrom(box)
+            # This must be within [0.0, 1.0]. It is better to filter those boxes with
+            # small scores to speed up metrics computation.
+            print(probs[i])
+            o.score = probs[i]
 
-        # Use correct type.
-        o.object.type = probs[i]
+            # Use correct type.
+            if object_type == "TYPE_VEHICLE":
+                o.object.type = label_pb2.Label.TYPE_VEHICLE
+            elif object_type == "TYPE_CYCLIST":
+                o.object.type = label_pb2.Label.TYPE_CYCLIST
+            elif object_type == "TYPE_PEDESTRIAN":
+                o.object.type = label_pb2.Label.TYPE_PEDESTRIAN
+            else:
+                raise "Invalid Object Type"
 
-        objects.objects.append(o)
+            objects.objects.append(o)
 
     # Add more objects. Note that a reasonable detector should limit its maximum
     # number of boxes predicted per frame. A reasonable value is around 400. A

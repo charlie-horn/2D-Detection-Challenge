@@ -9,11 +9,18 @@ def get_dataset_generator(C, data_directory, get_image_output_length, class_mapp
     import tensorflow as tf
     import os
     from frcnn.keras_frcnn.data_generators import get_new_img_size, calc_rpn
+    import time
+
     remote_input_files = helpers.get_remote_file_names(data_directory)
     input_file = ""
     i=0
+    file_counter = 0
+    start_time = time.time()
     
     for remote_input_file in remote_input_files:
+        file_counter += 1	
+        print("File #", file_counter)	
+        print("Elapsed time:", time.time() - start_time)
         try:
             os.remove(input_file)
         except:
@@ -38,21 +45,22 @@ def get_dataset_generator(C, data_directory, get_image_output_length, class_mapp
                 img = cv2.imdecode(image_contents_array, cv2.IMREAD_COLOR) 
                 input_img = cv2.imdecode(image_contents_array, cv2.IMREAD_COLOR)
 
-                for camera_labels in frame.camera_labels:
-                    if camera_labels.name != image.name:
-                        continue
-                    for label in camera_labels.labels:
-                        x1 = int(label.box.center_x - label.box.width/2)
-                        x2 = int(label.box.center_x + label.box.width/2)
-                        y1 = int(label.box.center_y - label.box.length/2)
-                        y2 = int(label.box.center_y + label.box.length/2)
-                        img_data['bboxes'].append({'class': class_mapping[label.type],
-                                                  'x1': x1,
-                                                  'x2': x2,
-                                                  'y1': y1,
-                                                  'y2': y2})
-                        cv2.rectangle(input_img,(x1, y1), (x2, y2), (0, 0, 255),2)
-                #cv2.imwrite('./input_images/{}.png'.format(i), input_img)
+                if mode == "train":
+                    for camera_labels in frame.camera_labels:
+                        if camera_labels.name != image.name:
+                            continue
+                        for label in camera_labels.labels:
+                            x1 = int(label.box.center_x - label.box.width/2)
+                            x2 = int(label.box.center_x + label.box.width/2)
+                            y1 = int(label.box.center_y - label.box.length/2)
+                            y2 = int(label.box.center_y + label.box.length/2)
+                            img_data['bboxes'].append({'class': class_mapping[label.type],
+                                                    'x1': x1,
+                                                    'x2': x2,
+                                                    'y1': y1,
+                                                    'y2': y2})
+                            cv2.rectangle(input_img,(x1, y1), (x2, y2), (0, 0, 255),2)
+                    #cv2.imwrite('./input_images/{}.png'.format(i), input_img)
                 try:
                     (rows, cols, _) = img.shape
                     img_data['width'] = cols

@@ -37,9 +37,8 @@ def test():
     import generator
     import helpers
     C = config.Config()
-    C.model_path = 'weights/model_frcnn.hdf5'
-    C.rpn_weights_path = "weights/rpn.hdf5"
-    C.class_weights_path = "weights/class.hdf5"
+    C.rpn_weights_path = "weights/resnet.hdf5"
+    C.class_weights_path = "weights/resnet.hdf5"
 
     output_file = "output/predictions.bin"
 
@@ -72,7 +71,6 @@ def test():
 
     model_classifier = Model([feature_map_input, roi_input], classifier)
 
-    print('Loading weights from {}'.format(C.model_path))
     model_rpn.load_weights(C.rpn_weights_path, by_name=True)
     model_classifier.load_weights(C.class_weights_path, by_name=True)
 
@@ -81,20 +79,20 @@ def test():
 
     idx = 0
 
-    bbox_threshold = 0.1
+    bbox_threshold = 0.6
 
     while True:
       X, Y, img_data, context, image = next(dataset_generator)
 
-            # get the feature maps and output from the RPN
+      # get the feature maps and output from the RPN
       [Y1, Y2, F] = model_rpn.predict(X)
       R = roi_helpers.rpn_to_roi(Y1, Y2, C, K.image_data_format(), overlap_thresh=0.7)
 
-            # convert from (x1,y1,x2,y2) to (x,y,w,h)
+      # convert from (x1,y1,x2,y2) to (x,y,w,h)
       R[:, 2] -= R[:, 0]
       R[:, 3] -= R[:, 1]
 
-            # apply the spatial pyramid pooling to the proposed regions
+      # apply the spatial pyramid pooling to the proposed regions
       bboxes = {}
       probs = {}
       for jk in range(R.shape[0]//C.num_rois + 1):
@@ -139,7 +137,7 @@ def test():
           bboxes[cls_name].append([C.rpn_stride*x, C.rpn_stride*y, C.rpn_stride*(x+w), C.rpn_stride*(y+h)])
           probs[cls_name].append(np.max(P_cls[0, ii, :]))
 
-      helpers.create_prediction(output_file, context, image, bboxes, probs)
+      helpers.create_prediction(output_file, context, image, bboxes, probs, img_data['ratio'])
 
       all_dets = []
       img=X[0]
@@ -153,22 +151,8 @@ def test():
         for jk in range(new_boxes.shape[0]):
           drawn = True
           (x1, y1, x2, y2) = new_boxes[jk,:]
-          (real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(img_data['ratio'], x1, y1, x2, y2)
-          #print("Original:",x1, x2, y1, y2)
-          #print("Real    :",real_x1, real_x2, real_y1, real_y2)
 
-          cv2.rectangle(img, (real_x1, real_y1), (real_x2, real_y2), (0, 0, 255),2)
-          #cv2.rectangle(X,(x1, y1), (x2, y2), (0, 0, 255),5)
-
-          textLabel = '{}: {}'.format(key,int(100*new_probs[jk]))
-          all_dets.append((key,100*new_probs[jk]))
-
-          #(retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
-          #textOrg = (x1, y1-0)
-
-          cv2.rectangle(img, (x1 - 5, y1 + 20), (x1+100, y1-100), (0, 0, 0), 2)
-          cv2.rectangle(img, (x1 - 5, y1 + 20), (x1+100, y1-100), (255, 255, 255), -1)
-          cv2.putText(img, textLabel, (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+          #cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255),2)
 
       idx += 1
       if drawn:
