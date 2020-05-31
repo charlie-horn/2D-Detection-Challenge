@@ -9,7 +9,7 @@ unique_method_name: "modified_frcnn"
 authors: "Charlie Horn"
 
 affiliation: ""
-description: "Faster RCNN model with custom hyperparameters."
+description: "Faster RCNN model, resnet architecture, custom hyperparameters, insufficient training."
 
 method_link: "https://github.com/charlie-horn/2D-Detection-Challenge.git"
 
